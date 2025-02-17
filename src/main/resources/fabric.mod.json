@@ -1,0 +1,44 @@
+{
+	"schemaVersion": 1,
+	"id": "biome-in-a-bottle",
+	"version": "${version}",
+	"name": "Biome in A bottle",
+	"description": "This is an example description! Tell everyone what your mod is about!",
+	"authors": [
+		"Craemon"
+	],
+	"contact": {
+		"homepage": "https://fabricmc.net/",
+		"sources": "https://github.com/FabricMC/fabric-example-mod"
+	},
+	"license": "ARR",
+	"icon": "assets/biome-in-a-bottle/icon.png",
+	"environment": "server",
+	"entrypoints": {
+		"main": [
+			"com.craemon.BiomeInABottle"
+		],
+		"client": [
+			"com.craemon.BiomeInABottleClient"
+		],
+		"fabric-datagen": [
+			"com.craemon.BiomeInABottleDataGenerator"
+		]
+	},
+	"mixins": [
+		"biome-in-a-bottle.mixins.json",
+		{
+			"config": "biome-in-a-bottle.client.mixins.json",
+			"environment": "client"
+		}
+	],
+	"depends": {
+		"fabricloader": ">=0.16.10",
+		"minecraft": "~1.21.4",
+		"java": ">=21",
+		"fabric-api": "*"
+	},
+	"suggests": {
+		"another-mod": "*"
+	}
+}
