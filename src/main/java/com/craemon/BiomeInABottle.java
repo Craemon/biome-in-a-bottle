@@ -3,7 +3,6 @@ package com.craemon;
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.event.player.UseItemCallback;
 import net.minecraft.item.ItemStack;
-import net.minecraft.registry.RegistryKey;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.server.world.ServerWorld;
@@ -13,9 +12,14 @@ import net.minecraft.util.Hand;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.ChunkPos;
 import net.minecraft.world.World;
-import net.minecraft.world.biome.BiomeKeys;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.util.Objects;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+import static net.minecraft.component.DataComponentTypes.CUSTOM_DATA;
 
 public class BiomeInABottle implements ModInitializer {
 	public static final String MOD_ID = "biome-in-a-bottle";
@@ -28,54 +32,49 @@ public class BiomeInABottle implements ModInitializer {
 		LOGGER.info("BiomeInABottle mod initialized!");
 	}
 
-	/**
-	 * Triggered when a player uses an item in the world.
-	 */
+	//triggered when player uses item
 	private ActionResult onUseItem(net.minecraft.entity.player.PlayerEntity player, World world, Hand hand) {
-		// Ensure that the player is on the server side
 		if (!(world instanceof ServerWorld serverWorld)) {
 			return ActionResult.PASS; // Ignore if the action is on the client side
 		}
 
-		// Ensure the player is holding the correct item (paper in this case)
+		// Ensure the player is holding the correct item with Stored Biome
 		ItemStack itemStack = player.getStackInHand(hand);
-		if (!itemStack.getItem().toString().equals("minecraft:paper")) {
-			return ActionResult.PASS; // Ignore if the item is not paper
+		if (!itemStack.getItem().toString().equals("minecraft:paper") || itemStack.get(CUSTOM_DATA) == null || !Objects.requireNonNull(itemStack.get(CUSTOM_DATA)).contains("StoredBiome")) {
+			return ActionResult.PASS;
 		}
+		if (!player.isCreative()) { // Only decrease if the player is NOT in Creative mode
+			itemStack.decrement(1); // Reduce by 1
+		}
+		// Print Chat Message
+		player.sendMessage(Text.literal("Changing the biome..."), false);
 
-		// Notify the player
-		player.sendMessage(Text.literal("You used Biome-in-a-Bottle! Changing the biome..."), false);
-
+		//get the biomeID
+		String StoredBiome = String.valueOf(itemStack.get(CUSTOM_DATA));
+		Pattern pattern = Pattern.compile("StoredBiome:\"(.*?)\"");
+		Matcher matcher = pattern.matcher(StoredBiome);
+		String BiomeId = matcher.find() ? matcher.group(1) : "unknown_biome";
 		// Get the player's chunk position
 		BlockPos playerPosition = player.getBlockPos();
 		ChunkPos chunkPos = new ChunkPos(playerPosition);
-
-		// Set the biome (default: PLAINS, can be changed to anything else)
-		RegistryKey<?> biomeKey = BiomeKeys.PLAINS;
+		//get player dimension
+		String dimensionId =  player.getWorld().getRegistryKey().getValue().toString();
 
 		// Execute the biome change
-		changeChunkBiome(serverWorld, chunkPos, biomeKey);
+		changeChunkBiome(serverWorld, chunkPos, dimensionId, BiomeId);
 
 		// Let the player know the biome has been changed successfully
-		player.sendMessage(Text.literal("Biome changed to: " + biomeKey.getValue()), false);
+		player.sendMessage(Text.literal("Biome changed to: " + BiomeId), false);
 
 		return ActionResult.SUCCESS;
 	}
 
-	/**
-	 * Changes the biome for a specific chunk using the /fillbiome command.
-	 * The command is executed by the server directly, bypassing player, so permissions aren't an issue.
-	 */
-	private void changeChunkBiome(ServerWorld serverWorld, ChunkPos chunkPos, RegistryKey<?> biomeKey) {
-		// Get the server object
+	//Changes the biome for a specific chunk using the /fillbiome command.
+	private void changeChunkBiome(ServerWorld serverWorld, ChunkPos chunkPos, String dimensionId, String biomeKey) {
 		MinecraftServer server = serverWorld.getServer();
-		if (server == null) {
-			LOGGER.error("Server instance is null, cannot execute fillbiome command.");
-			return;
-		}
-
 		// Get the server command source (execute the command as the server)
 		ServerCommandSource commandSource = server.getCommandSource();
+
 
 		// Get chunk boundaries
 		BlockPos chunkStart = chunkPos.getStartPos();
@@ -95,10 +94,11 @@ public class BiomeInABottle implements ModInitializer {
 			int yEnd = Math.min(yStart + subChunkHeight - 1, maxY); // Ensure we don't go above the maximum Y level
 
 			// Formulate the /fillbiome command
-			String command = String.format("fillbiome %d %d %d %d %d %d %s",
+			String command = String.format("execute in %s run fillbiome %d %d %d %d %d %d %s",
+					dimensionId,
 					minX, yStart, minZ, // Start of the sub-chunk
-					maxX, yEnd, maxZ,   // End of the sub-chunk
-					biomeKey.getValue() // Selected biome
+					maxX, yEnd, maxZ,// End of the sub-chunk
+					biomeKey // Selected biome
 			);
 
 			// Execute the command
