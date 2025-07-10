@@ -43,9 +43,6 @@ public class BiomeInABottle implements ModInitializer {
 		if (!itemStack.getItem().toString().equals("minecraft:paper") || itemStack.get(CUSTOM_DATA) == null || !Objects.requireNonNull(itemStack.get(CUSTOM_DATA)).contains("StoredBiome")) {
 			return ActionResult.PASS;
 		}
-		if (!player.isCreative()) { // Only decrease if the player is NOT in Creative mode
-			itemStack.decrement(1); // Reduce by 1
-		}
 		// Print Chat Message
 		player.sendMessage(Text.literal("Changing the biome..."), false);
 
@@ -59,7 +56,7 @@ public class BiomeInABottle implements ModInitializer {
 		Matcher matcher1 = pattern1.matcher(StoredBiome);
 		String BiomeSize = matcher1.find() ? matcher1.group(1) : "unknown_size";
 		//try to execute operation
-		if (BiomeSize.equals("Chunk")) {
+		if (BiomeSize.equals("Giant")) {
 			// Get the player's chunk position
 			BlockPos playerPosition = player.getBlockPos();
 			ChunkPos chunkPos = new ChunkPos(playerPosition);
@@ -79,51 +76,13 @@ public class BiomeInABottle implements ModInitializer {
 			return ActionResult.FAIL;
 		}
 
+		if (!player.isCreative()) { // Only decrease if the player is NOT in Creative mode
+			itemStack.decrement(1); // Reduce by 1
+		}
+
 		// Let the player know the biome has been changed successfully
 		player.sendMessage(Text.literal("Biome changed to: " + BiomeId), false);
 
 		return ActionResult.SUCCESS;
 	}
-
-	//Changes the biome for a specific chunk using the /fillbiome command.
-//	private void changeChunkBiome(ServerWorld serverWorld, ChunkPos chunkPos, String dimensionId, String biomeKey) {
-//		MinecraftServer server = serverWorld.getServer();
-//		// Get the server command source (execute the command as the server)
-//		ServerCommandSource commandSource = server.getCommandSource();
-//
-//
-//		// Get chunk boundaries
-//		BlockPos chunkStart = chunkPos.getStartPos();
-//		int minX = chunkStart.getX();
-//		int minZ = chunkStart.getZ();
-//		int maxX = minX + 15;
-//		int maxZ = minZ + 15;
-//
-//		// Get Y boundaries for this dimension
-//		int minY = serverWorld.getBottomY(); // Lowest Y coordinate (e.g., -64 for Overworld)
-//		int maxY = minY + serverWorld.getDimension().logicalHeight() - 1; // Maximum Y coordinate
-//
-//		int subChunkHeight = 16; // Process biome changes in 16-block-high slices (e.g., sub-chunks)
-//
-//		// Iterate through the chunk's vertical space in 16-block slices
-//		for (int yStart = minY; yStart <= maxY; yStart += subChunkHeight) {
-//			int yEnd = Math.min(yStart + subChunkHeight - 1, maxY); // Ensure we don't go above the maximum Y level
-//
-//			// Formulate the /fillbiome command
-//			String command = String.format("execute in %s run fillbiome %d %d %d %d %d %d %s",
-//					dimensionId,
-//					minX, yStart, minZ, // Start of the sub-chunk
-//					maxX, yEnd, maxZ,// End of the sub-chunk
-//					biomeKey // Selected biome
-//			);
-//
-//			// Execute the command
-//			try {
-//				server.getCommandManager().executeWithPrefix(commandSource, command);
-//				LOGGER.info("Executed command: " + command);
-//			} catch (Exception e) {
-//				LOGGER.error("Failed to execute fillbiome command: " + command, e);
-//			}
-//		}
-//	}
 }
