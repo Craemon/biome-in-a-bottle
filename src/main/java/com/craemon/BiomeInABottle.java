@@ -65,7 +65,16 @@ public class BiomeInABottle implements ModInitializer {
 
 			// Execute the biome change
 			ChangeBiomes.changeBiomeChunk(serverWorld, chunkPos, dimensionId, BiomeId);
-		} else if (BiomeSize.equals("Small")) {
+		} else if (BiomeSize.equals("Huge")) {
+            // Get the player's chunk position
+            BlockPos playerPosition = player.getBlockPos();
+            ChunkPos chunkPos = new ChunkPos(playerPosition);
+            //get player dimension
+            String dimensionId =  player.getWorld().getRegistryKey().getValue().toString();
+
+            // Execute the biome change
+            ChangeBiomes.changeBiomeSubchunk(serverWorld, chunkPos, dimensionId, BiomeId);
+        } else if (BiomeSize.equals("Small")) {
 			ChangeBiomes.changeBiomePaint(serverWorld, player, BiomeId, 0);
 		} else if (BiomeSize.equals("Medium")) {
 			ChangeBiomes.changeBiomePaint(serverWorld, player, BiomeId, 2);

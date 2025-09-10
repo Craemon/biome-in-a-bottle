@@ -60,6 +60,37 @@ public class ChangeBiomes {
             }
         }
     }
+    //Changes the biome for a specific subchunk using the /fillbiome command.
+    public static void changeBiomeSubchunk(ServerWorld serverWorld, ChunkPos chunkPos, String dimensionId, String biomeKey) {
+        MinecraftServer server = serverWorld.getServer();
+        // Get the server command source (execute the command as the server)
+        ServerCommandSource commandSource = server.getCommandSource();
+
+        // Get chunk boundaries
+        BlockPos chunkStart = chunkPos.getStartPos();
+        int minX = chunkStart.getX();
+        int minZ = chunkStart.getZ();
+        int minY = chunkStart.getY();
+        int maxX = minX + 15;
+        int maxZ = minZ + 15;
+        int maxY = minY + 15;
+
+        // Formulate the /fillbiome command
+        String command = String.format("execute in %s run fillbiome %d %d %d %d %d %d %s",
+                dimensionId,
+                minX, minY, minZ, // Start of the sub-chunk
+                maxX, maxY, maxZ,// End of the sub-chunk
+                biomeKey // Selected biome
+        );
+
+        // Execute the command
+        try {
+            server.getCommandManager().executeWithPrefix(commandSource, command);
+            LOGGER.info("Executed command: " + command);
+        } catch (Exception e) {
+            LOGGER.error("Failed to execute fillbiome command: " + command, e);
+        }
+    }
     public static void changeBiomePaint(ServerWorld serverWorld, PlayerEntity player, String biomeKey, int size) {
         MinecraftServer server = serverWorld.getServer();
         // Get the server command source (execute the command as the server)
