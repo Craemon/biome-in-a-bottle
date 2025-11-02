@@ -1,16 +1,14 @@
 package com.craemon;
 
 import com.craemon.utils.RaycastHelper;
+import com.mojang.brigadier.CommandDispatcher;
+import com.mojang.brigadier.ParseResults;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.server.world.ServerWorld;
-import net.minecraft.util.hit.BlockHitResult;
-import net.minecraft.util.hit.HitResult;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.ChunkPos;
-import net.minecraft.world.RaycastContext;
-import net.minecraft.world.chunk.Chunk;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -53,7 +51,9 @@ public class ChangeBiomes {
 
             // Execute the command
             try {
-                server.getCommandManager().executeWithPrefix(commandSource, command);
+                CommandDispatcher<ServerCommandSource> dispatcher = server.getCommandManager().getDispatcher();
+                ParseResults<ServerCommandSource> results = dispatcher.parse(command, commandSource);
+                dispatcher.execute(results);
                 LOGGER.info("Executed command: " + command);
             } catch (Exception e) {
                 LOGGER.error("Failed to execute fillbiome command: " + command, e);
@@ -61,7 +61,7 @@ public class ChangeBiomes {
         }
     }
     //Changes the biome for a specific subchunk using the /fillbiome command.
-    public static void changeBiomeSubchunk(ServerWorld serverWorld, ChunkPos chunkPos, String dimensionId, String biomeKey) {
+    public static void changeBiomeSubchunk(ServerWorld serverWorld, ChunkPos chunkPos, int yStart, String dimensionId, String biomeKey) {
         MinecraftServer server = serverWorld.getServer();
         // Get the server command source (execute the command as the server)
         ServerCommandSource commandSource = server.getCommandSource();
@@ -70,7 +70,7 @@ public class ChangeBiomes {
         BlockPos chunkStart = chunkPos.getStartPos();
         int minX = chunkStart.getX();
         int minZ = chunkStart.getZ();
-        int minY = chunkStart.getY();
+        int minY = yStart;
         int maxX = minX + 15;
         int maxZ = minZ + 15;
         int maxY = minY + 15;
@@ -85,7 +85,9 @@ public class ChangeBiomes {
 
         // Execute the command
         try {
-            server.getCommandManager().executeWithPrefix(commandSource, command);
+            CommandDispatcher<ServerCommandSource> dispatcher = server.getCommandManager().getDispatcher();
+            ParseResults<ServerCommandSource> results = dispatcher.parse(command, commandSource);
+            dispatcher.execute(results);
             LOGGER.info("Executed command: " + command);
         } catch (Exception e) {
             LOGGER.error("Failed to execute fillbiome command: " + command, e);
@@ -104,7 +106,9 @@ public class ChangeBiomes {
         String command = getCommand(biomeKey, size, centerBlock);
         // Execute the command
         try {
-            server.getCommandManager().executeWithPrefix(commandSource, command);
+            CommandDispatcher<ServerCommandSource> dispatcher = server.getCommandManager().getDispatcher();
+            ParseResults<ServerCommandSource> results = dispatcher.parse(command, commandSource);
+            dispatcher.execute(results);
             LOGGER.info("Executed command: " + command);
         } catch (Exception e) {
             LOGGER.error("Failed to execute fillbiome command: " + command, e);

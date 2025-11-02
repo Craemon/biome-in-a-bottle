@@ -3,6 +3,7 @@ package com.craemon;
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.event.player.UseItemCallback;
 import net.minecraft.item.ItemStack;
+import net.minecraft.nbt.NbtCompound;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.server.world.ServerWorld;
@@ -12,6 +13,7 @@ import net.minecraft.util.Hand;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.ChunkPos;
 import net.minecraft.world.World;
+import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -40,9 +42,19 @@ public class BiomeInABottle implements ModInitializer {
 
 		// Ensure the player is holding the correct item with Stored Biome
 		ItemStack itemStack = player.getStackInHand(hand);
-		if (!itemStack.getItem().toString().equals("minecraft:paper") || itemStack.get(CUSTOM_DATA) == null || !Objects.requireNonNull(itemStack.get(CUSTOM_DATA)).contains("StoredBiome")) {
-			return ActionResult.PASS;
-		}
+
+        @Nullable NbtCompound customNbt = Objects.requireNonNull(itemStack.get(CUSTOM_DATA)).copyNbt();
+
+        // Check 1: Is the component itself null?
+        // Check 2: Does the NbtCompound contain the specific key?
+        if (!itemStack.getItem().toString().equals("minecraft:paper") || customNbt == null || !customNbt.contains("StoredBiome"))
+        {
+            return ActionResult.PASS;
+        }
+
+//		if (!itemStack.getItem().toString().equals("minecraft:paper") || itemStack.get(CUSTOM_DATA) == null || !Objects.requireNonNull(itemStack.get(CUSTOM_DATA)).contains("StoredBiome")) {
+//			return ActionResult.PASS;
+//		}
 		// Print Chat Message
 		player.sendMessage(Text.literal("Changing the biome..."), false);
 
@@ -61,19 +73,20 @@ public class BiomeInABottle implements ModInitializer {
 			BlockPos playerPosition = player.getBlockPos();
 			ChunkPos chunkPos = new ChunkPos(playerPosition);
 			//get player dimension
-			String dimensionId =  player.getWorld().getRegistryKey().getValue().toString();
+			String dimensionId =  player.getEntityWorld().getRegistryKey().getValue().toString();
 
 			// Execute the biome change
 			ChangeBiomes.changeBiomeChunk(serverWorld, chunkPos, dimensionId, BiomeId);
 		} else if (BiomeSize.equals("Huge")) {
             // Get the player's chunk position
             BlockPos playerPosition = player.getBlockPos();
+            int subchunkYStart = (playerPosition.getY() / 16) * 16;
             ChunkPos chunkPos = new ChunkPos(playerPosition);
             //get player dimension
-            String dimensionId =  player.getWorld().getRegistryKey().getValue().toString();
+            String dimensionId =  player.getEntityWorld().getRegistryKey().getValue().toString();
 
             // Execute the biome change
-            ChangeBiomes.changeBiomeSubchunk(serverWorld, chunkPos, dimensionId, BiomeId);
+            ChangeBiomes.changeBiomeSubchunk(serverWorld, chunkPos, subchunkYStart, dimensionId, BiomeId);
         } else if (BiomeSize.equals("Small")) {
 			ChangeBiomes.changeBiomePaint(serverWorld, player, BiomeId, 0);
 		} else if (BiomeSize.equals("Medium")) {
