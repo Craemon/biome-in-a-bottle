@@ -3,12 +3,12 @@ package com.craemon;
 import com.craemon.utils.RaycastHelper;
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.ParseResults;
-import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.server.MinecraftServer;
-import net.minecraft.server.command.ServerCommandSource;
-import net.minecraft.server.world.ServerWorld;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.ChunkPos;
+import net.minecraft.commands.CommandSourceStack;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.level.ChunkPos;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -18,22 +18,22 @@ public class ChangeBiomes {
     public static final Logger LOGGER = LoggerFactory.getLogger(MOD_ID);
 
     //Changes the biome for a specific chunk using the /fillbiome command.
-    public static void changeBiomeChunk(ServerWorld serverWorld, ChunkPos chunkPos, String dimensionId, String biomeKey) {
+    public static void changeBiomeChunk(ServerLevel serverWorld, ChunkPos chunkPos, String dimensionId, String biomeKey) {
         MinecraftServer server = serverWorld.getServer();
         // Get the server command source (execute the command as the server)
-        ServerCommandSource commandSource = server.getCommandSource();
+        CommandSourceStack commandSource = server.createCommandSourceStack();
 
 
         // Get chunk boundaries
-        BlockPos chunkStart = chunkPos.getStartPos();
+        BlockPos chunkStart = chunkPos.getWorldPosition();
         int minX = chunkStart.getX();
         int minZ = chunkStart.getZ();
         int maxX = minX + 15;
         int maxZ = minZ + 15;
 
         // Get Y boundaries for this dimension
-        int minY = serverWorld.getBottomY(); // Lowest Y coordinate (e.g., -64 for Overworld)
-        int maxY = minY + serverWorld.getDimension().logicalHeight() - 1; // Maximum Y coordinate
+        int minY = serverWorld.getMinY(); // Lowest Y coordinate (e.g., -64 for Overworld)
+        int maxY = minY + serverWorld.dimensionType().logicalHeight() - 1; // Maximum Y coordinate
 
         int subChunkHeight = 16; // Process biome changes in 16-block-high slices (e.g., sub-chunks)
 
@@ -51,8 +51,8 @@ public class ChangeBiomes {
 
             // Execute the command
             try {
-                CommandDispatcher<ServerCommandSource> dispatcher = server.getCommandManager().getDispatcher();
-                ParseResults<ServerCommandSource> results = dispatcher.parse(command, commandSource);
+                CommandDispatcher<CommandSourceStack> dispatcher = server.getCommands().getDispatcher();
+                ParseResults<CommandSourceStack> results = dispatcher.parse(command, commandSource);
                 dispatcher.execute(results);
                 LOGGER.info("Executed command: " + command);
             } catch (Exception e) {
@@ -61,13 +61,13 @@ public class ChangeBiomes {
         }
     }
     //Changes the biome for a specific subchunk using the /fillbiome command.
-    public static void changeBiomeSubchunk(ServerWorld serverWorld, ChunkPos chunkPos, int yStart, String dimensionId, String biomeKey) {
+    public static void changeBiomeSubchunk(ServerLevel serverWorld, ChunkPos chunkPos, int yStart, String dimensionId, String biomeKey) {
         MinecraftServer server = serverWorld.getServer();
         // Get the server command source (execute the command as the server)
-        ServerCommandSource commandSource = server.getCommandSource();
+        CommandSourceStack commandSource = server.createCommandSourceStack();
 
         // Get chunk boundaries
-        BlockPos chunkStart = chunkPos.getStartPos();
+        BlockPos chunkStart = chunkPos.getWorldPosition();
         int minX = chunkStart.getX();
         int minZ = chunkStart.getZ();
         int minY = yStart;
@@ -85,18 +85,18 @@ public class ChangeBiomes {
 
         // Execute the command
         try {
-            CommandDispatcher<ServerCommandSource> dispatcher = server.getCommandManager().getDispatcher();
-            ParseResults<ServerCommandSource> results = dispatcher.parse(command, commandSource);
+            CommandDispatcher<CommandSourceStack> dispatcher = server.getCommands().getDispatcher();
+            ParseResults<CommandSourceStack> results = dispatcher.parse(command, commandSource);
             dispatcher.execute(results);
             LOGGER.info("Executed command: " + command);
         } catch (Exception e) {
             LOGGER.error("Failed to execute fillbiome command: " + command, e);
         }
     }
-    public static void changeBiomePaint(ServerWorld serverWorld, PlayerEntity player, String biomeKey, int size) {
+    public static void changeBiomePaint(ServerLevel serverWorld, Player player, String biomeKey, int size) {
         MinecraftServer server = serverWorld.getServer();
         // Get the server command source (execute the command as the server)
-        ServerCommandSource commandSource = server.getCommandSource();
+        CommandSourceStack commandSource = server.createCommandSourceStack();
 
         BlockPos centerBlock = RaycastHelper.getBlockLooking(player);
         //ensure valid block was found:
@@ -106,8 +106,8 @@ public class ChangeBiomes {
         String command = getCommand(biomeKey, size, centerBlock);
         // Execute the command
         try {
-            CommandDispatcher<ServerCommandSource> dispatcher = server.getCommandManager().getDispatcher();
-            ParseResults<ServerCommandSource> results = dispatcher.parse(command, commandSource);
+            CommandDispatcher<CommandSourceStack> dispatcher = server.getCommands().getDispatcher();
+            ParseResults<CommandSourceStack> results = dispatcher.parse(command, commandSource);
             dispatcher.execute(results);
             LOGGER.info("Executed command: " + command);
         } catch (Exception e) {
